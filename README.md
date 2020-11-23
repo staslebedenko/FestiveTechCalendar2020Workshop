@@ -32,8 +32,9 @@ and run command choco install kubernetes-helm
 
 ## Step 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 
-Lets begin with project setup, you should create a folder and open command prompt there via CMD
+Lets begin with project setup and create two functions. The first one will have and HTTP trigger with name "Publisher" and second one Azure Storage Queue trigger with name Subscriber. We will add output trigger to another storage queue later, to avoid initial setup of Azure SQL server.
 
+Run the following command via command prompt CMD
 
 ```bash
     func init KedaFunctionsDemo — worker-runtime dotnet — docker
@@ -42,7 +43,31 @@ Lets begin with project setup, you should create a folder and open command promp
     func new — name Subscriber — template “Queue Trigger”
 ```
 
+Alternatively there is an option to create a new project in Visual Studio and select Azure Functions.
+
+The next activity connected with Docker, we need to:
+* Create a docker container and test the application.
+* Deploy container to the private container registry (ACR).
+* Deploy container to Azure Kubernetes cluster (AKS).
+
+```bash
+    func init KedaFunctionsDemo — worker-runtime dotnet — docker
+    cd KedaFunctionsDemo 
+    func new — name Publisher — template “HTTP trigger” 
+    func new — name Subscriber — template “Queue Trigger”
+```
+
+Now we can run this solution with command func start and run test curl command
+
+```bash
+    func start --build --verbose
+    curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
+```
+
 ## Step 3. Deploy infrastructure in Azure via included infrastructure script.
+
+For this demo solution we need to scaffold infrastructure in Azure to have initial working version.
+I`m a huge fan of Azure CLI for brevity and lightweight
 
 ```bash
       postfix=$RANDOM
@@ -80,8 +105,40 @@ Lets begin with project setup, you should create a folder and open command promp
 
 ```
 
+We need to bavigate to KedaFunctionsDemo folder and update AzureWebJobsStorage value with storage account connection string. Add output triggers and most importantly change authorization level on Producer function from AuthorizationLevel.Function to AuthorizationLevel.Anonymous.
 
+```csharp
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.WebJobs;
+    using Microsoft.Azure.WebJobs.Host;
+    using Microsoft.Extensions.Logging;
 
+    namespace KedaFunctionsDemo
+    {
+        public static class Subscriber
+        {
+            [FunctionName("Subscriber")]
+            public static async System.Threading.Tasks.Task RunAsync([QueueTrigger("k8queue", Connection = "AzureWebJobsStorage")]string myQueueItem,
+            ILogger log,
+            CancellationToken cts,
+            [Queue("k8queueresults", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
+            {
+                log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+
+                await messages.AddAsync($"Processed: {myQueueItem}", cts);
+            }
+        }
+    }
+```
+
+Now lets build and run docker container locally, but first we need to set a container name like ACR one from CLI script - k82Registry. Be aware that account connection string is needed for container start.
+
+```bash
+    docker build -t k82Registry.azurecr.io/kedafunctionsdemo .
+    docker run -p -e docker run -p 9090:80 -e AzureWebJobsStorage={storage string without quotes}  k82egistry.azurecr.io/kedafunctionsdemo:v1
+```
 
 
 ## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
