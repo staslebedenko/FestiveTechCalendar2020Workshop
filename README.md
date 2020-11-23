@@ -1,4 +1,6 @@
-# FestiveTechCalendar2020Workshop (level 200) 
+# Festive Tech Calendar 2020 Workshop - Function/KEDA/RabbitMQ/SQL (level 200)  
+https://festivetechcalendar.com/ 
+
 Welcome to the self-paced workshop on how to lift an Azure Functions application to on-premises via Kubernetes, KEDA, and RabbitMQ.
 
 ## Steps
