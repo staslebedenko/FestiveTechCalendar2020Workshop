@@ -9,6 +9,7 @@ The workshop is build around the 5 steps.
 3. Deploy infrastructure in Azure via included infrastructure script.
 4. Generate Kubernetes manifest and deploy application to the cloud.
 5. Migrate current project to RabbitMQ and deploy container with SQL Server.
+6. Final steps, database, testing and problems.
 
 ## Prerequisites
 
@@ -143,3 +144,8 @@ Now let`s start a CMD and call az login command
           }
       }
 ```
+
+
+## Step 6. Final steps, database, testing and problems.
+
+Now we need to choose a storage for our data.
