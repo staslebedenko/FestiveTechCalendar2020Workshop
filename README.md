@@ -4,7 +4,7 @@ https://festivetechcalendar.com/
 Welcome to the self-paced workshop on how to lift an Azure Functions application to on-premises via Kubernetes, KEDA, and RabbitMQ.
 
 ## Steps
-The workshop is build around the 5 steps.
+The workshop is build around six steps.
 
 1. Install local components - azure cli, kubectl, helm, etc.
 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
