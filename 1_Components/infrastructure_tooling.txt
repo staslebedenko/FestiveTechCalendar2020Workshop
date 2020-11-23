@@ -1,0 +1,5 @@
+Azure Functions Core Tools https://docs.docker.com/docker-for-windows/install/
+Azure CLI https://docs.docker.com/docker-for-windows/install/
+Docker https://docs.docker.com/docker-for-windows/install/
+Kubectl https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-windows
+Helm https://github.com/helm/helm/releases The fastest/easiest way is to install choco package manager https://chocolatey.org/install and run command choco install kubernetes-helm
