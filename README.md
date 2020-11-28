@@ -39,7 +39,10 @@ Also kubectl will be added to the system, if you choose kubernetes option during
 Kubectl - if it is not available after docker installaation, then there is a need to install it manually or via Powershell.
 https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-windows
 
-HELM - the simple way is to get archive from https://github.com/kubernetes/helm/releases . Extract helm.exe to a directory and it to the environment variable PATH.
+HELM - the simple way is to get archive from https://github.com/kubernetes/helm/releases . 
+Extract helm.exe to a directory and it to the environment variable PATH.
+<img src="img/envvariable.png" width="400">
+
 But since I use choco package manager https://chocolatey.org/install, my choice was to install it as package via - choco install kubernetes-helm
 
 ## Step 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
