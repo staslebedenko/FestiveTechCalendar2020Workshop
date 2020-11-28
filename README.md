@@ -6,7 +6,7 @@ Welcome to the self-paced workshop on how to lift an Azure Functions application
 ## Steps
 The workshop is build around six steps.
 
-1. Install local components - azure cli, kubectl, helm, etc.
+1. Install local components - azure cli, , chokubectl, helm, etc.
 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 3. Deploy infrastructure in Azure via included infrastructure script.
 4. Generate Kubernetes manifest and deploy application to the cloud.
@@ -29,8 +29,18 @@ Lets install:
 3. Docker https://docs.docker.com/docker-for-windows/install/
 4. Kubectl https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-windows
 5. Helm https://github.com/helm/helm/releases 
-The fastest/easiest way is to install choco package manager https://chocolatey.org/install
-and run command choco install kubernetes-helm
+
+Azure Functions Core Tools ahd Azure CLI installation are straightforward, but there is a need to provide details on the last three.
+
+Docker - if you have a latest Window 10 version, then you can might need the latest Windows Subsystem for Linux version from here.
+https://docs.microsoft.com/en-us/windows/wsl/install-win10
+Also kubectl will be added to the system, if you choose kubernetes option during the installation.
+
+Kubectl - if it is not available after docker installaation, then there is a need to install it manually or via Powershell.
+https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-windows
+
+HELM - the simple way is to get archive from https://github.com/kubernetes/helm/releases . Extract helm.exe to a directory and it to the environment variable PATH.
+But since I use choco package manager https://chocolatey.org/install, my choice was to install it as package via - choco install kubernetes-helm
 
 ## Step 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 
