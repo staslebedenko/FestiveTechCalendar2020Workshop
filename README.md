@@ -199,21 +199,13 @@ And in Subscriber we changing entire signature to code below, including switch f
     }
 ```
 
-
-
-
-Now it`s time to test container locally with following commands. Be aware that account connection string is needed for container start.
+Now we can run this solution with command func start and run test curl command
 
 ```bash
-docker build -t k82registry.azurecr.io/kedafunctions:v1 .
-docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
-
-docker run -p 9090:80 -e AzureWebJobsStorage="DefaultEndpointsProtocol=https;AccountName=k82storage24853;AccountKey=sMHZw3245fdnUo/xrpylcpGRAKIKItYwbuaSm9apnOfTBTy3crcnKdNP3sVM3PjaAm51XPjkj3i3aj7OMRt+Qg==;EndpointSuffix=core.windows.net" k82registry.azurecr.io/kedafunctions:v1
-
-curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
-
-FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+func start --build --verbose
+curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
 ```
+
 
 
 ## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
@@ -314,3 +306,17 @@ namespace KedaFunctions
 ## Step 6. Final steps, testing and problems.
 
 Now we need to choose a storage for our data.
+
+
+In order to run container locally you need to specify all secrets like azure storage token or RabbitMQ credentials.
+
+```bash
+docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
+
+docker run -p 9090:80 -e AzureWebJobsStorage="DefaultEndpointsProtocol=https;AccountName=k82storage24853;AccountKey=sMHZw3245fdnUo/xrpylcpGRAKIKItYwbuaSm9apnO3crcnKdNP3sVM3PjaAm51XPjkj3i3aj7OMRt+Qg==;EndpointSuffix=core.windows.net" k82registry.azurecr.io/kedafunctions:v1
+
+curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
+
+FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+```
