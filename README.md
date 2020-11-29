@@ -10,8 +10,8 @@ The workshop is build around six steps.
 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 3. Deploy infrastructure in Azure via included infrastructure script.
 4. Generate Kubernetes manifest and deploy application to the cloud.
-5. Migrate current project to RabbitMQ and deploy container with SQL Server.
-6. Final steps, database, testing and problems.
+5. Step 5. Deployment and configuration of RabbitMQ.
+6. Final steps, testing and problems.
 
 ## Prerequisites
 
@@ -127,6 +127,103 @@ echo "Update local.settings.json Values=>AzureWebJobsStorage value with:  " $acc
 
 We need to bavigate to KedaFunctionsDemo folder and update AzureWebJobsStorage value with storage account connection string. Add output triggers and most importantly change authorization level on Producer function from AuthorizationLevel.Function to AuthorizationLevel.Anonymous.
 
+
+And in Subscriber we changing entire signature to code below, including switch from static void.
+
+```csharp
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.WebJobs;
+    using Microsoft.Azure.WebJobs.Host;
+    using Microsoft.Extensions.Logging;
+
+    namespace KedaFunctionsDemo
+    {
+        public static class Subscriber
+        {
+            [FunctionName("Subscriber")]
+            public static async System.Threading.Tasks.Task RunAsync([QueueTrigger("k8queue", Connection = "AzureWebJobsStorage")]string myQueueItem,
+            ILogger log,
+            CancellationToken cts,
+            [Queue("k8queueresults", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
+            {
+                log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+
+                await messages.AddAsync($"Processed: {myQueueItem}", cts);
+            }
+        }
+    }
+```
+
+
+
+
+Now it`s time to test container locally with following commands. Be aware that account connection string is needed for container start.
+
+```bash
+ 
+    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
+    
+    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
+    
+    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+```
+
+
+## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
+
+During this step we will:
+* Deploy container to the private container registry (ACR).
+* Lift container to Azure Kubernetes cluster (AKS).
+
+Let`s start a CMD and call az login command
+
+```bash
+      az login
+      az account set --subscription {your-subscription-guid}
+      az account show
+
+      az acr login --name k82registry
+      az acr login --name k82registry --expose-token
+
+      az acr repository list --name k82registry --output table
+
+      az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
+
+      docker images
+      docker push k82registry.azurecr.io/kedafunctions:V1
+      az acr repository list --name k82Registry --output table
+```
+One thing is missing now - it`s KEDA installation.
+There are several options to install KEDA, with function tools, HELM or kubectl, here is the link. To speed up things we will do this from project directory with func command.
+
+```bash
+func kubernetes install — namespace keda
+```
+Then we generating cluster manifest.
+
+```bash
+func kubernetes deploy --name k82-cluster --image-name "k82Registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_demo.yml
+```
+
+Its a good idea to double check generated k8_keda_demo.yml file and compare container images with those are published in container registry. In my case version were different :v1 referenced in YAML file and different one in registry.
+
+After changing YAML file with a correct container name, we need to deploy it.
+
+```bash
+kubectl apply -f k8_keda_demo.yml
+
+kubectl get nodes
+kubectl get pods
+kubectl get service --watch
+```
+
+
+## Step 5. Deployment and configuration of RabbitMQ.
+
+
+
 We need to change static async Task<IActionResult> to static IActionResult
     
 ```csharp
@@ -167,112 +264,8 @@ namespace KedaFunctionsDemo
 }
 
 ```
-And in Subscriber we changing entire signature to code below, including switch from static void.
-
-```csharp
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.WebJobs;
-    using Microsoft.Azure.WebJobs.Host;
-    using Microsoft.Extensions.Logging;
-
-    namespace KedaFunctionsDemo
-    {
-        public static class Subscriber
-        {
-            [FunctionName("Subscriber")]
-            public static async System.Threading.Tasks.Task RunAsync([QueueTrigger("k8queue", Connection = "AzureWebJobsStorage")]string myQueueItem,
-            ILogger log,
-            CancellationToken cts,
-            [Queue("k8queueresults", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
-            {
-                log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
-
-                await messages.AddAsync($"Processed: {myQueueItem}", cts);
-            }
-        }
-    }
-```
-
-Now it`s time to test container locally with following commands. Be aware that account connection string is needed for container start.
-
-```bash
- 
-    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
-    
-    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
-    
-    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
-```
 
 
-## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
-
-During this step we will:
-* Deploy container to the private container registry (ACR).
-* Lift container to Azure Kubernetes cluster (AKS).
-
-Let`s start a CMD and call az login command
-
-```bash
-      az login
-      az account set --subscription {your-subscription-guid}
-      az account show
-
-      az acr login --name k82registry
-      az acr login --name k82registry --expose-token
-
-      az acr repository list --name k82registry --output table
-
-      az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
-
-      docker images
-      docker push k82registry.azurecr.io/kedafunctionsdemo:V1
-      az acr repository list --name k82Registry --output table
-```
-
-
-## Step 5. Migrate current project to RabbitMQ and deploy container with SQL Server.
-
-```csharp
-      using System.Threading;
-      using Microsoft.AspNetCore.Mvc;
-      using Microsoft.Azure.WebJobs;
-      using Microsoft.Azure.WebJobs.Extensions.Http;
-      using Microsoft.AspNetCore.Http;
-      using Microsoft.Extensions.Logging;
-      using System;
-
-      namespace KedaFunctionsDemo
-      {
-          public static class Publisher
-          {
-              [FunctionName("Publisher")]
-              public static IActionResult Run(
-                  [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Publisher")] HttpRequest req,
-                  CancellationToken cts,
-                  ILogger log,
-                  [RabbitMQ(ConnectionStringSetting = "RabbitMQConnection", QueueName = "k8queue")] out string message
-                  )
-              {
-                  string name = req.Query["name"];
-
-                  if (string.IsNullOrEmpty(name))
-                  {
-                      message = null;
-                      return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
-                  }
-
-                  message = name;
-
-                  return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
-              }
-          }
-      }
-```
-
-
-## Step 6. Final steps, database, testing and problems.
+## Step 6. Final steps, testing and problems.
 
 Now we need to choose a storage for our data.
