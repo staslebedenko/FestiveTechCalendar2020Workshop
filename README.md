@@ -90,38 +90,38 @@ For this demo solution we need to scaffold infrastructure in Azure to have initi
 I`m a huge fan of Azure CLI for brevity and lightweight
 
 ```bash
-      postfix=$RANDOM
-      location=northeurope
-      groupName=k82-calendar$postfix
-      clusterName=k82-calendar$postfix
-      registryName=k82registry$postfix
-      accountSku=Standard_LRS
-      accountName=k82storage$postfix
-      queueName=k8queue
-      queueResultsName=k8queueresults
+postfix=$RANDOM
+location=northeurope
+groupName=k82-calendar$postfix
+clusterName=k82-calendar$postfix
+registryName=k82registry$postfix
+accountSku=Standard_LRS
+accountName=k82storage$postfix
+queueName=k8queue
+queueResultsName=k8queueresults
 
-      az group create --name $groupName --location $location
+az group create --name $groupName --location $location
 
-      az storage account create --name $accountName --location $location --kind StorageV2 \
-      --resource-group $groupName --sku $accountSku --access-tier Hot  --https-only true
+az storage account create --name $accountName --location $location --kind StorageV2 \
+--resource-group $groupName --sku $accountSku --access-tier Hot  --https-only true
 
-      accountKey=$(az storage account keys list --resource-group $groupName --account-name $accountName --query "[0].value" | tr -d '"')
+accountKey=$(az storage account keys list --resource-group $groupName --account-name $accountName --query "[0].value" | tr -d '"')
 
-      accountConnString="DefaultEndpointsProtocol=https;AccountName=$accountName;AccountKey=$accountKey;EndpointSuffix=core.windows.net"
+accountConnString="DefaultEndpointsProtocol=https;AccountName=$accountName;AccountKey=$accountKey;EndpointSuffix=core.windows.net"
 
-      az storage queue create --name $queueName --account-key $accountKey \
-      --account-name $accountName --connection-string $accountConnString
+az storage queue create --name $queueName --account-key $accountKey \
+--account-name $accountName --connection-string $accountConnString
 
-      az storage queue create --name $queueResultsName --account-key $accountKey \
-      --account-name $accountName --connection-string $accountConnString
+az storage queue create --name $queueResultsName --account-key $accountKey \
+--account-name $accountName --connection-string $accountConnString
 
-      az acr create --resource-group $groupName --name $registryName --sku Standard
-      az acr identity assign --identities [system] --name $registryName
+az acr create --resource-group $groupName --name $registryName --sku Standard
+az acr identity assign --identities [system] --name $registryName
 
-      az aks create --resource-group $groupName --name $clusterName --node-count 3 --generate-ssh-keys --network-plugin azure
-      az aks update --resource-group $groupName --name $clusterName --attach-acr $registryName
+az aks create --resource-group $groupName --name $clusterName --node-count 3 --generate-ssh-keys --network-plugin azure
+az aks update --resource-group $groupName --name $clusterName --attach-acr $registryName
 
-      echo "Update local.settings.json Values=>AzureWebJobsStorage value with:  " $accountConnString
+echo "Update local.settings.json Values=>AzureWebJobsStorage value with:  " $accountConnString
 
 ```
 
