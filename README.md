@@ -60,10 +60,10 @@ Lets begin with project setup and create two functions. The first one will have 
 Run the following command via command prompt CMD
 
 ```bash
-    func init KedaFunctionsDemo — worker-runtime dotnet — docker
-    cd KedaFunctionsDemo 
-    func new — name Publisher — template “HTTP trigger” 
-    func new — name Subscriber — template “Queue Trigger”
+    func init KedaFunctions --worker-runtime dotnet --docker
+    cd KedaFunctions 
+    func new --name Publisher --template “HTTP trigger” 
+    func new --name Subscriber --template “Queue Trigger”
 ```
 
 Alternatively there is an option to create a new project in Visual Studio and select Azure Functions.
