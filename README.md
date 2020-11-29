@@ -68,19 +68,25 @@ Run the following command via command prompt CMD
 
 Alternatively there is an option to create a new project in Visual Studio and select Azure Functions.
 
-The next activity connected with Docker, we need to create a docker container and test the application.
-
-```bash
-docker build -t k82registry.azurecr.io/kedafunctions:v1 .
-docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
-docker push k82registry.azurecr.io/kedafunctions:v1
-```
-
 Now we can run this solution with command func start and run test curl command
 
 ```bash
-    func start --build --verbose
-    curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
+func start --build --verbose
+curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
+```
+
+Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry. 
+
+```bash
+  
+    docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+    docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
+    
+    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
+    
+    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
+    
+    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
 ```
 
 ## Step 3. Deploy infrastructure in Azure via included infrastructure script.
@@ -93,7 +99,7 @@ I`m a huge fan of Azure CLI for brevity and lightweight
       location=northeurope
       groupName=k82-calendar$postfix
       clusterName=k82-calendar$postfix
-      registryName=k82Registry$postfix
+      registryName=k82registry$postfix
       accountSku=Standard_LRS
       accountName=k82storage$postfix
       queueName=k8queue
@@ -126,6 +132,48 @@ I`m a huge fan of Azure CLI for brevity and lightweight
 
 We need to bavigate to KedaFunctionsDemo folder and update AzureWebJobsStorage value with storage account connection string. Add output triggers and most importantly change authorization level on Producer function from AuthorizationLevel.Function to AuthorizationLevel.Anonymous.
 
+We need to change static async Task<IActionResult> to static IActionResult
+    
+```csharp
+
+using System.Threading;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using System;
+
+namespace KedaFunctionsDemo
+{
+    public static class Publisher
+    {
+        [FunctionName("Publisher")]
+        public static IActionResult Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Publisher")] HttpRequest req,
+            CancellationToken cts,
+            ILogger log,
+            [RabbitMQ(ConnectionStringSetting = "RabbitMQConnection", QueueName = "k8queue")] out string message
+            )
+        {
+            string name = req.Query["name"];
+
+            if (string.IsNullOrEmpty(name))
+            {
+                message = null;
+                return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
+            }
+
+            message = name;
+
+            return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
+        }
+    }
+}
+
+```
+And in Subscriber we changing entire signature to code below, including switch from static void.
+
 ```csharp
     using System;
     using System.Threading;
@@ -152,11 +200,15 @@ We need to bavigate to KedaFunctionsDemo folder and update AzureWebJobsStorage v
     }
 ```
 
-Now lets build and run docker container locally, but first we need to set a container name like ACR one from CLI script - k82Registry. Be aware that account connection string is needed for container start.
+Now it`s time to test container locally with following commands. Be aware that account connection string is needed for container start.
 
 ```bash
-    docker build -t k82Registry.azurecr.io/kedafunctionsdemo .
-    docker run -p -e docker run -p 9090:80 -e AzureWebJobsStorage={storage string without quotes}  k82egistry.azurecr.io/kedafunctionsdemo:v1
+ 
+    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
+    
+    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
+    
+    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
 ```
 
 
@@ -164,7 +216,7 @@ Now lets build and run docker container locally, but first we need to set a cont
 
 During this step we will:
 * Deploy container to the private container registry (ACR).
-* Deploy container to Azure Kubernetes cluster (AKS).
+* Lift container to Azure Kubernetes cluster (AKS).
 
 Let`s start a CMD and call az login command
 
@@ -181,7 +233,7 @@ Let`s start a CMD and call az login command
       az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
 
       docker images
-      docker push k82registry.azurecr.io/kedafunctionsdemo:latest
+      docker push k82registry.azurecr.io/kedafunctionsdemo:V1
       az acr repository list --name k82Registry --output table
 ```
 
