@@ -45,6 +45,14 @@ Extract helm.exe to a directory and it to the environment variable PATH.
 
 But since I use choco package manager https://chocolatey.org/install, my choice was to install it as package via - choco install kubernetes-helm
 
+In order to check installations, run following commands in CMD:
+func
+az
+docker
+kubectl
+helm
+
+
 ## Step 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 
 Lets begin with project setup and create two functions. The first one will have and HTTP trigger with name "Publisher" and second one Azure Storage Queue trigger with name Subscriber. We will add output trigger to another storage queue later, to avoid initial setup of Azure SQL server.
@@ -60,16 +68,12 @@ Run the following command via command prompt CMD
 
 Alternatively there is an option to create a new project in Visual Studio and select Azure Functions.
 
-The next activity connected with Docker, we need to:
-* Create a docker container and test the application.
-* Deploy container to the private container registry (ACR).
-* Deploy container to Azure Kubernetes cluster (AKS).
+The next activity connected with Docker, we need to create a docker container and test the application.
 
 ```bash
-    func init KedaFunctionsDemo — worker-runtime dotnet — docker
-    cd KedaFunctionsDemo 
-    func new — name Publisher — template “HTTP trigger” 
-    func new — name Subscriber — template “Queue Trigger”
+docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
+docker push k82registry.azurecr.io/kedafunctions:v1
 ```
 
 Now we can run this solution with command func start and run test curl command
@@ -158,7 +162,11 @@ Now lets build and run docker container locally, but first we need to set a cont
 
 ## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
 
-Now let`s start a CMD and call az login command
+During this step we will:
+* Deploy container to the private container registry (ACR).
+* Deploy container to Azure Kubernetes cluster (AKS).
+
+Let`s start a CMD and call az login command
 
 ```bash
       az login
