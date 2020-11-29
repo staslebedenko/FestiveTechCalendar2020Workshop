@@ -81,12 +81,7 @@ Now lets build docker container locally, for that we need to use Azure Container
   
     docker build -t k82registry.azurecr.io/kedafunctions:v1 .
     docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
-    
-    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
-    
-    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
-    
-    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+
 ```
 
 ## Step 3. Deploy infrastructure in Azure via included infrastructure script.
