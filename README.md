@@ -127,6 +127,49 @@ echo "Update local.settings.json Values=>AzureWebJobsStorage value with:  " $acc
 
 We need to bavigate to KedaFunctionsDemo folder and update AzureWebJobsStorage value with storage account connection string. Add output triggers and most importantly change authorization level on Producer function from AuthorizationLevel.Function to AuthorizationLevel.Anonymous.
 
+In Publisher we adding output to Azure Storage Queue.
+
+```csharp
+
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
+namespace KedaFunctions
+{
+    public static class Publisher
+    {
+        [FunctionName("Publisher")]
+        public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            CancellationToken cts,
+            ILogger log,
+            [Queue("k8queue", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
+        {
+            string name = req.Query["name"];
+
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            name = name ?? data?.name;
+
+            if(string.IsNullOrEmpty(name)){
+                return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
+            }
+
+            await messages.AddAsync(name, cts);
+
+            return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
+        }
+    }
+}
+```
 
 And in Subscriber we changing entire signature to code below, including switch from static void.
 
@@ -138,7 +181,7 @@ And in Subscriber we changing entire signature to code below, including switch f
     using Microsoft.Azure.WebJobs.Host;
     using Microsoft.Extensions.Logging;
 
-    namespace KedaFunctionsDemo
+    namespace KedaFunctions
     {
         public static class Subscriber
         {
@@ -162,12 +205,14 @@ And in Subscriber we changing entire signature to code below, including switch f
 Now it`s time to test container locally with following commands. Be aware that account connection string is needed for container start.
 
 ```bash
- 
-    docker run -p 9090:80 -e AzureWebJobsStorage="UseDevelopmentStorage=true" k82registry.azurecr.io/kedafunctions:v1
-    
-    curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
-    
-    FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
+
+docker run -p 9090:80 -e AzureWebJobsStorage="DefaultEndpointsProtocol=https;AccountName=k82storage24853;AccountKey=sMHZw3245fdnUo/xrpylcpGRAKIKItYwbuaSm9apnOfTBTy3crcnKdNP3sVM3PjaAm51XPjkj3i3aj7OMRt+Qg==;EndpointSuffix=core.windows.net" k82registry.azurecr.io/kedafunctions:v1
+
+curl --get http://localhost:9090/api/Publisher?name=FestiveCalendarParticipant
+
+FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
 ```
 
 
@@ -236,7 +281,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace KedaFunctionsDemo
+namespace KedaFunctions
 {
     public static class Publisher
     {
