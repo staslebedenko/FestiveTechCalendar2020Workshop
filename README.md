@@ -322,7 +322,6 @@ Then proceed with an output trigger change for the Publisher function.
 We need to change static async Task<IActionResult> to static IActionResult
     
 ```csharp
-
 using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -357,18 +356,82 @@ namespace KedaFunctions
         }
     }
 }
-
-
 ```
 And adding the new input trigger for the Subscriber function, we will keep output to the storage queue as is, to observe that messages are running across our pipeline.
 
 ```csharp
 [RabbitMQ(QueueName = "k8queue",  ConnectionStringSetting = "RabbitMQConnection")] string message
 ```
+And full resulting code
+
+```csharp
+using System.Threading;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Logging;
+
+namespace KedaFunctions
+{
+    public static class Subscriber
+    {
+        [FunctionName("Subscriber")]
+        public static async System.Threading.Tasks.Task RunAsync([RabbitMQTrigger("k8queue", ConnectionStringSetting = "RabbitMQConnection")] string myQueueItem,
+        ILogger log,
+        CancellationToken cts,
+        [Queue("k8queueresults", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
+        {
+            log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+
+            await messages.AddAsync($"Processed: {myQueueItem}", cts);
+        }
+    }
+}
+```
+Now we can run this solution with command func start and run test curl command to see how message will be processed by RabbitMQ.
+
+```bash
+func start --build --verbose
+curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
+```
+Generate a new kubernetes manifest.
+```bash
+func kubernetes deploy --name k82-calendar --image-name "k82registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_rabbit_demo.yml
+```
+
+Build a new container, publishing it and deploying a new manifest. Just in case you closed window where you made az login command, I will provide full script.
+
+```bash
+az login
+az account set --subscription {your-subscription-guid}
+az account show
+
+az acr login --name k82registry
+az acr login --name k82registry --expose-token
+
+az acr repository list --name k82registry --output table
+
+az aks get-credentials --resource-group k82-calendar --name k82-calendar --overwrite-existing
+
+docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker images
+docker push k82registry.azurecr.io/kedafunctions:v1
+az acr repository list --name k82Registry --output table
+
+kubectl apply -f k8_keda_rabbit_demo.yml
+kubectl get deployments -w
+kubectl get pods
+```
 
 ## Step 6. Final steps, testing and problems.
 
-Now we need to choose a storage for our data.
+Finally, your Publisher function available via the same url
+http://40.127.237.207/api/Publisher?name=SomeoneFromRabbit 
+
+Summary
+* Are functions can be run on Kubernetes? Yes.
+* Are functions better in the Azure? Yes.
+* Are functions app is cloud agnostic? Yes.
+* Do you need two solutions for on-prem and cloud? No.
+
 
 
 In order to run container locally you need to specify all secrets like azure storage token or RabbitMQ credentials.
