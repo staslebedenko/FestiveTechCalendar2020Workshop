@@ -268,19 +268,25 @@ Login to our cluster from CMD
 
 ```bash
 az acr login --name k82registry
-az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
-kubectl config use-context k82-cluster
+az aks get-credentials --resource-group k82-calendar --name k82-calendar --overwrite-existing
+kubectl config use-context k82-calendar
 kubectl get pods
 ```
 
-Then proceed with RabbitMQ deployment
+Then proceed with RabbitMQ deployment and last string will return instance password in Base64 format.
+You can decode it with online/local tool like https://base64.guru/converter/decode
+
 ```bash
 kubectl create namespace k8rabbit
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm search repo bitnami
-helm install --name my-rabbitmq --set rabbitmq.username=user,rabbitmq.password=PASSWORD
+helm repo update
+helm install k8-rabbitmq bitnami/rabbitmq --set rabbitmq.username=user,rabbitmq.password=PAS3SWORD3 --namespace k8rabbit
 
 kubectl get deployments,pods,services --namespace k8rabbit
+
+kubectl get secret --namespace k8rabbit k8-rabbitmq -o jsonpath="{.data.rabbitmq-password}"
+
 ```
 
 We can also open cluster configuration via Azure portal and observe results, now we have a RabbitMQ along with KEDA, but we should create a queue there, so we can put messages.
@@ -292,19 +298,17 @@ And make the following changes to the YAML file, by changing the type ClusterIP 
 
 This YAML update will generate new load balancing rules for the selected public IP address and RabbitMQ ports. If you want to disable or restrict access to your queues - just delete balancing rules or limit access to your IP address only via Network Security Group.
 
-
 Queue configuration
+http://20.67.129.70:15672
+
 Log in to the management console via a new IP address, port 15762 and user and password created earlier and create transient queue via user interface.
 
-
 Now, let's form a connection string for RabbitMQ queue, we can obtain the internal and publish IP address from K8s Portal Services and Ingresses page. The public IP address can be used for development purposes from the local machine.
-
-We will use external connection string, otherwise its bettew to use internal IP connections inside your cluster.
 
 ```bash
 default format - amqp://user:password@url:port
 internal format - amqp://user:password@10.240.0.71:5672
-public format - amqp://user:password@20.67.128.53:5672
+public format - amqp://user:password@20.67.129.70:5672
 ```
 We will add the last connection string to our local.settings.json
 
@@ -353,6 +357,7 @@ namespace KedaFunctions
         }
     }
 }
+
 
 ```
 And adding the new input trigger for the Subscriber function, we will keep output to the storage queue as is, to observe that messages are running across our pipeline.
