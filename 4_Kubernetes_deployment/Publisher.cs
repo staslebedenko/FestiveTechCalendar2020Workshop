@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -14,22 +15,24 @@ namespace KedaFunctions
     {
         [FunctionName("Publisher")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            ILogger log)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            CancellationToken cts,
+            ILogger log,
+            [Queue("k8queue", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-
             string name = req.Query["name"];
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             name = name ?? data?.name;
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            if(string.IsNullOrEmpty(name)){
+                return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
+            }
 
-            return new OkObjectResult(responseMessage);
+            await messages.AddAsync(name, cts);
+
+            return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
         }
     }
 }

@@ -1,6 +1,7 @@
 data:
   AzureWebJobsStorage: RGVmYXVsdEVuZHBvaW50c1Byb3RvY29sPWh0dHBzO0FjY291bnROYW1lPWs4MnN0b3JhZ2U7QWNjb3VudEtleT1nTkJQb3V6clZtenVURnJaY2VScWVjMS9leVhyMXBsdVZFUzkxckt2RXRzbkNSdGtiMlRhQ2U4djhxNDZBOHFDcTVPZHVpbWlZOHBFQ0ozV3lTdTlhQT09O0VuZHBvaW50U3VmZml4PWNvcmUud2luZG93cy5uZXQ=
   FUNCTIONS_WORKER_RUNTIME: ZG90bmV0
+  RabbitMQConnection: YW1xcDovL3VzZXI6NWtQcDlLenlqbEAyMC42Ny4xMjkuNzA6NTY3Mg==
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,10 +9,10 @@ metadata:
   namespace: default
 ---
 data:
-  host.master: WGFQN1pPeG9oSVhmaWFWTEhMdXpxMkI4VzdyeGREMzcyZ1FHUVgxR0JoQ2dDcDJISm1LT0NnPT0=
-  host.function.default: SFhkbVZTOUZZYWhJMTlBL0RpdnJ4eEJhRkR5QmhCVDlKSTZlenRvcU5sT2ZZZS9LRjQwMEJRPT0=
-  host.systemKey.default: YmxMcU1qWXZWTXN6MnA5TEdzdE55b2xJWndCRlZPSmhPYUFhOU1SRFlKWGFTVEk0NEgzUzNRPT0=
   functions.publisher.default: UFNFWkZUbHNza3dMMGtuWHFJbWxIZXBIbENEY0wwdVdiQXdsODNJQzRKVnZhRkJOZTdBbEpBPT0=
+  host.function.default: SFhkbVZTOUZZYWhJMTlBL0RpdnJ4eEJhRkR5QmhCVDlKSTZlenRvcU5sT2ZZZS9LRjQwMEJRPT0=
+  host.master: WGFQN1pPeG9oSVhmaWFWTEhMdXpxMkI4VzdyeGREMzcyZ1FHUVgxR0JoQ2dDcDJISm1LT0NnPT0=
+  host.systemKey.default: YmxMcU1qWXZWTXN6MnA5TEdzdE55b2xJWndCRlZPSmhPYUFhOU1SRFlKWGFTVEk0NEgzUzNRPT0=
 apiVersion: v1
 kind: Secret
 metadata:
@@ -143,11 +144,11 @@ spec:
   scaleTargetRef:
     deploymentName: k82-calendar
   triggers:
-  - type: azure-queue
+  - type: rabbitmq
     metadata:
-      type: queueTrigger
-      connection: AzureWebJobsStorage
+      type: rabbitMQTrigger
       queueName: k8queue
       name: myQueueItem
+      host: RabbitMQConnection
 ---
 

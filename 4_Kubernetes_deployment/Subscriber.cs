@@ -1,5 +1,8 @@
+  using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
 namespace KedaFunctions
@@ -7,7 +10,7 @@ namespace KedaFunctions
     public static class Subscriber
     {
         [FunctionName("Subscriber")]
-        public static async System.Threading.Tasks.Task RunAsync([RabbitMQTrigger("k8queue", ConnectionStringSetting = "RabbitMQConnection")] string myQueueItem,
+        public static async System.Threading.Tasks.Task RunAsync([QueueTrigger("k8queue", Connection = "AzureWebJobsStorage")]string myQueueItem,
         ILogger log,
         CancellationToken cts,
         [Queue("k8queueresults", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> messages)

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,9 +8,8 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
 
-namespace KedaFunctionsDemo
+namespace KedaFunctions
 {
     public static class Publisher
     {
@@ -21,26 +21,17 @@ namespace KedaFunctionsDemo
             [RabbitMQ(ConnectionStringSetting = "RabbitMQConnection", QueueName = "k8queue")] out string message
             )
         {
-            try
-            {
-                string name = req.Query["name"];
+            string name = req.Query["name"];
 
-                if (string.IsNullOrEmpty(name))
-                {
-                    message = null;
-                    return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
-                }
-
-                message = name;
-
-                return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
-            }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(name))
             {
                 message = null;
-                return new BadRequestObjectResult($"Exception {ex}");
+                return new BadRequestObjectResult("Pass a name in the query string or in the request body to proceed.");
             }
 
+            message = name;
+
+            return new OkObjectResult($"Hello, {name}. This HTTP triggered function executed successfully.");
         }
     }
 }
