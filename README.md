@@ -75,14 +75,7 @@ func start --build --verbose
 curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
 ```
 
-Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry. 
 
-```bash
-  
-    docker build -t k82registry.azurecr.io/kedafunctions:v1 .
-    docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
-
-```
 
 ## Step 3. Deploy infrastructure in Azure via included infrastructure script.
 
@@ -214,37 +207,54 @@ During this step we will:
 * Deploy container to the private container registry (ACR).
 * Lift container to Azure Kubernetes cluster (AKS).
 
+Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry (get correct name from Cloud Shell output). 
+
+```bash
+  
+
+
+```
+
 Let`s start a CMD and call az login command
 
 ```bash
-      az login
-      az account set --subscription {your-subscription-guid}
-      az account show
+az login
+az account set --subscription {your-subscription-guid}
+az account show
 
-      az acr login --name k82registry
-      az acr login --name k82registry --expose-token
+az acr login --name k82registry
+az acr login --name k82registry --expose-token
 
-      az acr repository list --name k82registry --output table
+az acr repository list --name k82registry --output table
 
-      az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
+az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
 
-      docker images
-      docker push k82registry.azurecr.io/kedafunctions:V1
-      az acr repository list --name k82Registry --output table
+az acr repository list --name k82Registry --output table
 ```
+
+The next step is to create and push container to Azure Container registry
+
+```bash
+docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
+docker images
+docker push k82registry.azurecr.io/kedafunctions:V1
+az acr repository list --name k82Registry --output table
+```
+
 One thing is missing now - it`s KEDA installation.
 There are several options to install KEDA, with function tools, HELM or kubectl, here is the link. To speed up things we will do this from project directory with func command.
 
 ```bash
 func kubernetes install — namespace keda
 ```
-Then we generating cluster manifest.
+Then we generating cluster manifest with --dry-run option, otherwise application will be deployed to cluster.
 
 ```bash
 func kubernetes deploy --name k82-cluster --image-name "k82Registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_demo.yml
 ```
 
-Its a good idea to double check generated k8_keda_demo.yml file and compare container images with those are published in container registry. In my case version were different :v1 referenced in YAML file and different one in registry.
+Its a good idea to double check generated k8_keda_demo.yml file and compare container image name with those are published in container registry. In my case version were different :v1 referenced in YAML file and different one in registry.
 
 After changing YAML file with a correct container name, we need to deploy it.
 
