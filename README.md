@@ -207,13 +207,6 @@ During this step we will:
 * Deploy container to the private container registry (ACR).
 * Lift container to Azure Kubernetes cluster (AKS).
 
-Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry (get correct name from Cloud Shell output). 
-
-```bash
-  
-
-
-```
 
 Let`s start a CMD and call az login command
 
@@ -227,18 +220,18 @@ az acr login --name k82registry --expose-token
 
 az acr repository list --name k82registry --output table
 
-az aks get-credentials --resource-group k82-cluster --name k82-cluster --overwrite-existing
+az aks get-credentials --resource-group k82-calendar --name k82-calendar --overwrite-existing
 
-az acr repository list --name k82Registry --output table
+az acr repository list --name k82registry --output table
 ```
 
-The next step is to create and push container to Azure Container registry
+Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry (get correct name from Cloud Shell output). 
+And push it to Azure Container registry
 
 ```bash
 docker build -t k82registry.azurecr.io/kedafunctions:v1 .
-docker tag k82registry.azurecr.io/kedafunctions:v1 k82registry.azurecr.io/kedafunctions:v1
 docker images
-docker push k82registry.azurecr.io/kedafunctions:V1
+docker push k82registry.azurecr.io/kedafunctions:v1
 az acr repository list --name k82Registry --output table
 ```
 
@@ -251,7 +244,7 @@ func kubernetes install — namespace keda
 Then we generating cluster manifest with --dry-run option, otherwise application will be deployed to cluster.
 
 ```bash
-func kubernetes deploy --name k82-cluster --image-name "k82Registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_demo.yml
+func kubernetes deploy --name k82-calendar --image-name "k82registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_demo.yml
 ```
 
 Its a good idea to double check generated k8_keda_demo.yml file and compare container image name with those are published in container registry. In my case version were different :v1 referenced in YAML file and different one in registry.
@@ -260,16 +253,14 @@ After changing YAML file with a correct container name, we need to deploy it.
 
 ```bash
 kubectl apply -f k8_keda_demo.yml
-
-kubectl get nodes
+kubectl get deployments -w
 kubectl get pods
-kubectl get service --watch
 ```
 
+And finally, use cluster public IP to send a new message down the pipeline and observe results via Azure Storage account Queue k8queueresults
+http://40.127.237.207/api/Publisher?name=Test
 
 ## Step 5. Deployment and configuration of RabbitMQ.
-
-
 
 And now we will proceed with RabbitMQ configuration and deployment to Kubernetes.
 
