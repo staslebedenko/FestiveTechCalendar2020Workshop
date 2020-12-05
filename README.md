@@ -397,12 +397,8 @@ Now we can run this solution with command func start and run test curl command t
 func start --build --verbose
 curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
 ```
-Generate a new kubernetes manifest.
-```bash
-func kubernetes deploy --name k82-calendar --image-name "k82registry.azurecr.io/kedafunctions:v1" --dry-run > k8_keda_rabbit_demo.yml
-```
 
-Build a new container, publishing it and deploying a new manifest. Just in case you closed window where you made az login command, I will provide full script.
+Build a new container, publishing it and deploy a new manifest. Just in case you closed window where you made az login command, I will provide full script.
 
 ```bash
 az login
@@ -416,10 +412,15 @@ az acr repository list --name k82registry --output table
 
 az aks get-credentials --resource-group k82-calendar --name k82-calendar --overwrite-existing
 
-docker build -t k82registry.azurecr.io/kedafunctions:v1 .
+docker build -t k82registry.azurecr.io/kedafunctions:v2 .
 docker images
-docker push k82registry.azurecr.io/kedafunctions:v1
+docker push k82registry.azurecr.io/kedafunctions:v2
 az acr repository list --name k82Registry --output table
+```
+
+Generate a new kubernetes manifest and deploy it
+```bash
+func kubernetes deploy --name k82-calendar --image-name "k82registry.azurecr.io/kedafunctions:v2" --dry-run > k8_keda_rabbit_demo.yml
 
 kubectl apply -f k8_keda_rabbit_demo.yml
 kubectl get deployments -w
