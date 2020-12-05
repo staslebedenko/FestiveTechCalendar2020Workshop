@@ -219,13 +219,8 @@ az account set --subscription {your-subscription-guid}
 az account show
 
 az acr login --name k82registry
-az acr login --name k82registry --expose-token
-
-az acr repository list --name k82registry --output table
 
 az aks get-credentials --resource-group k82-calendar --name k82-calendar --overwrite-existing
-
-az acr repository list --name k82registry --output table
 ```
 
 Now lets build docker container locally, for that we need to use Azure Container Registry name from CLI script below - k82registry (get correct name from Cloud Shell output). 
@@ -277,7 +272,7 @@ kubectl get pods
 ```
 
 Then proceed with RabbitMQ deployment and last string will return instance password in Base64 format.
-You can decode it with online/local tool like https://base64.guru/converter/decode
+You can decode it with online/local tool like https://emn178.github.io/online-tools/base64_decode.html
 
 ```bash
 kubectl create namespace k8rabbit
