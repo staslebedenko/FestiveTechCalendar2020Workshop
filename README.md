@@ -41,17 +41,20 @@ https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-windo
 
 HELM - the simple way is to get archive from https://github.com/kubernetes/helm/releases . 
 Extract helm.exe to a directory and it to the environment variable PATH.
+
 <img src="img/envvariable.png" width="400">
 
 But since I use choco package manager https://chocolatey.org/install, my choice was to install it as package via - choco install kubernetes-helm
 
 In order to check installations, run following commands in CMD:
+
+```bash
 func
 az
 docker
 kubectl
 helm
-
+```
 
 ## Step 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 
