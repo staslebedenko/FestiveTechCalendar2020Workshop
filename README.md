@@ -289,17 +289,24 @@ kubectl get secret --namespace k8rabbit k8-rabbitmq -o jsonpath="{.data.rabbitmq
 
 We can also open cluster configuration via Azure portal and observe results, now we have a RabbitMQ along with KEDA, but we should create a queue there, so we can put messages.
 
+<img src="img/clusterazurerabbit.png" width="600">
 
 For the local Kubernetes cluster, you should install and configure NGINX.
 Proceed to the cluster configuration blade and open “my-rabbitmq” section.
 And make the following changes to the YAML file, by changing the type ClusterIP to LoadBalancer - this will create a new public IP address along with new rules in the existing load balancer.
 
+<img src="img/clusterazurerabbitbalancer.png" width="600">
+
 This YAML update will generate new load balancing rules for the selected public IP address and RabbitMQ ports. If you want to disable or restrict access to your queues - just delete balancing rules or limit access to your IP address only via Network Security Group.
+
+<img src="img/clusterazurerabbitbalanceren.png" width="600">
 
 Queue configuration
 http://20.67.129.70:15672
 
 Log in to the management console via a new IP address, port 15762 and user and password created earlier and create transient queue via user interface.
+
+<img src="img/queuecreate.png" width="600">
 
 Now, let's form a connection string for RabbitMQ queue, we can obtain the internal and publish IP address from K8s Portal Services and Ingresses page. The public IP address can be used for development purposes from the local machine.
 
