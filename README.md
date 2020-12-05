@@ -237,7 +237,7 @@ One thing is missing now - it`s KEDA installation.
 There are several options to install KEDA, with function tools, HELM or kubectl, here is the link. To speed up things we will do this from project directory with func command.
 
 ```bash
-func kubernetes install — namespace keda
+func kubernetes install --namespace keda
 ```
 Then we generating cluster manifest with --dry-run option, otherwise application will be deployed to cluster.
 
@@ -430,6 +430,13 @@ kubectl get pods
 
 Finally, your Publisher function available via the same url
 http://40.127.237.207/api/Publisher?name=SomeoneFromRabbit 
+
+And we can do a little load test via Artillery
+
+```bash
+npm install -g artillery
+artillery quick --count 20 --num 100 http://20.54.101.197/api/Publisher?name=LoadTest
+```
 
 Summary
 * Are functions can be run on Kubernetes? Yes.
