@@ -9,8 +9,8 @@ The workshop is build around six steps.
 1. Install local components - azure cli, , chokubectl, helm, etc.
 2. Create sample Azure Functions application via Functions CLI CLI or Visual studio.
 3. Deploy infrastructure in Azure via included infrastructure script.
-4. Generate Kubernetes manifest and deploy application to the cloud.
-5. Step 5. Deployment and configuration of RabbitMQ.
+4. Update Functions triggers, Kubernetes manifest and deploy application to the cloud.
+5. Deployment and configuration of RabbitMQ.
 6. Final steps, testing and problems.
 
 ## Prerequisites
@@ -203,8 +203,7 @@ curl --get http://localhost:7071/api/Publisher?name=FestiveCalendarParticipant
 ```
 
 
-
-## Step 4. Generate Kubernetes manifest and deploy application to the cloud.
+## Step 4. Update Functions triggers, Kubernetes manifest and deploy application to the cloud.
 
 During this step we will:
 * Deploy container to the private container registry (ACR).
